@@ -1,0 +1,19 @@
+---
+- hosts: all 
+  become: true
+
+  pre_tasks:
+  - name: update cache
+    ansible.builtin.apt:
+      update_cache: yes
+      name:
+        - "*"
+      state: latest
+    
+  tasks:
+
+  - name: install apache2 
+    ansible.builtin.apt:
+      name:
+        - apache2
+      state: latest
