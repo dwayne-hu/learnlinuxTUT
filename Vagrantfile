@@ -34,4 +34,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         ubuntu2204.vm.hostname = "ubuntu2204.test"
         ubuntu2204.vm.network :private_network, ip: "192.168.56.6"
     end
+
+    # App Server 4
+    config.vm.define "srv4" do |centos|
+        centos.vm.box = "generic/centos7"
+        centos.vm.hostname = "centos.test"
+        centos.vm.network :private_network, ip: "192.168.56.7"
+    end
 end

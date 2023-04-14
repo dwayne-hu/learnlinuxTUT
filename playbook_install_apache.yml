@@ -3,17 +3,50 @@
   become: true
 
   pre_tasks:
-  - name: update cache
+  - name: update cache on ubuntu
     ansible.builtin.apt:
       update_cache: yes
       name:
         - "*"
       state: latest
+    when: ansible_distribution in ["Ubuntu", "Debian"]
+
+  - name: update cache on centos
+    ansible.builtin.yum:
+      update_cache: yes
+      name:
+        - "*"
+      state: latest
+    when: ansible_distribution in ["CentOS"] and ansible_distribution_major_version == "7"
     
   tasks:
 
-  - name: install apache2 
+  - name: install apache2 on ubuntu
     ansible.builtin.apt:
       name:
         - apache2
       state: latest
+    when: ansible_distribution in ["Ubuntu", "Debian"]
+
+  - name: install apache2 on centos
+    ansible.builtin.yum:
+      name:
+        - httpd
+      state: latest
+      use_backend: yum3
+    when: ansible_distribution == "CentOS" and ansible_distribution_major_version == "7"
+
+  - name: start apache2 on centos
+    ansible.builtin.service:
+      name: httpd
+      state: started
+    when: ansible_distribution == "CentOS"
+
+  - name: configure firewall on centos
+    ansible.posix.firewalld:
+      permanent: true
+      immediate: true
+      port: 80/tcp
+      state: enabled
+    when: ansible_distribution == "CentOS"
+
