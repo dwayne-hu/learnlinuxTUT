@@ -4,6 +4,7 @@
 
   pre_tasks:
   - name: update cache and all packages
+    tags: always
     ansible.builtin.package:
       name:
         - "*"
@@ -31,6 +32,7 @@
 
   tasks:
   - name: install updates (centos)
+    tags: always
     ansible.builtin.yum:
       update_only: yes
       update_cache: yes
@@ -38,6 +40,7 @@
     when: ansible_distribution == "CentOS"
 
   - name: install updates (ubuntu)
+    tags: always
     ansible.builtin.apt:
       upgrade: dist
       update_cache: yes
@@ -46,6 +49,7 @@
 - hosts: web_servers
   become: true
   tasks:
+
 
   # - name: test
   #   ansible.builtin.package:
@@ -56,6 +60,7 @@
 # Replaced by 'package' module ##
 
   - name: install apache2 on ubuntu
+    tags: apache2,apache,ubuntu 
     ansible.builtin.apt:
       name:
         - apache2
@@ -64,6 +69,7 @@
     when: ansible_distribution in ["Ubuntu", "Debian"]
 
   - name: install apache2 on centos
+    tags: apache,centos,httpd
     ansible.builtin.yum:
       name:
         - httpd
@@ -87,3 +93,33 @@
       state: enabled
     when: ansible_distribution in ["CentOS"]
 
+- hosts: db_servers 
+  become: true
+  tasks:
+
+  - name: install mariadb package (CentOS)
+    tags: centos,mariadb,db
+    ansible.builtin.dnf:
+      name:
+        - mariadb
+        - state: latest 
+        - use_backend: yum3
+    when: ansible_distribution == "CentOS"
+
+  - name: install mariadb (Ubuntu)
+    tags: ubuntu,mariadb,db
+    ansible.builtin.apt:
+      name:
+        - mariadb-server
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
+- hosts: file_servers
+  become: true 
+  tasks:
+
+  - name: install samba
+    tags: samba
+    ansible.builtin.package:
+      name: samba
+      state: latest 
