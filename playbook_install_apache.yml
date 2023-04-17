@@ -31,9 +31,10 @@
 
   tasks:
   - name: install updates (centos)
-    ansible.builtin.dnf:
+    ansible.builtin.yum:
       update_only: yes
       update_cache: yes
+      use_backend: yum3
     when: ansible_distribution == "CentOS"
 
   - name: install updates (ubuntu)
@@ -66,6 +67,7 @@
     ansible.builtin.yum:
       name:
         - httpd
+        - php
       state: latest
       use_backend: yum3
     when: ansible_distribution in ["CentOS"] and ansible_distribution_major_version == "7"
