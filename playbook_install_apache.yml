@@ -29,32 +29,47 @@
   #   when: ansible_distribution in ["CentOS"] and ansible_distribution_major_version == "7"
 ##
 
-    
+  tasks:
+  - name: install updates (centos)
+    ansible.builtin.dnf:
+      update_only: yes
+      update_cache: yes
+    when: ansible_distribution == "CentOS"
+
+  - name: install updates (ubuntu)
+    ansible.builtin.apt:
+      upgrade: dist
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+- hosts: web_servers
+  become: true
   tasks:
 
-  - name: test
-    ansible.builtin.package:
+  # - name: test
+  #   ansible.builtin.package:
+  #     name:
+  #       - "{{ apache_package }}"
+  #     state: latest
+
+# Replaced by 'package' module ##
+
+  - name: install apache2 on ubuntu
+    ansible.builtin.apt:
       name:
-        - "{{ apache_package }}"
+        - apache2
+        - libapache2-mod-php
       state: latest
+    when: ansible_distribution in ["Ubuntu", "Debian"]
 
-## Replaced by 'package' module ##
-
-  # - name: install apache2 on ubuntu
-  #   ansible.builtin.apt:
-  #     name:
-  #       - apache2
-  #     state: latest
-  #   when: ansible_distribution in ["Ubuntu", "Debian"]
-
-  # - name: install apache2 on centos
-  #   ansible.builtin.yum:
-  #     name:
-  #       - httpd
-  #     state: latest
-  #     use_backend: yum3
-  #   when: ansible_distribution in ["CentOS"] and ansible_distribution_major_version == "7"
-##
+  - name: install apache2 on centos
+    ansible.builtin.yum:
+      name:
+        - httpd
+      state: latest
+      use_backend: yum3
+    when: ansible_distribution in ["CentOS"] and ansible_distribution_major_version == "7"
+#
 
   - name: start apache2 on centos
     ansible.builtin.service:
