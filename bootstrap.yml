@@ -1,0 +1,73 @@
+---
+- hosts: all 
+  become: true
+
+# Pretasks updating the system
+  pre_tasks:
+  - name: update cache and all packages
+    tags: always
+    ansible.builtin.package:
+      name:
+        - "*"
+      state: latest
+      update_cache: yes
+
+## Replaced by 'package' module
+
+  # - name: update cache on ubuntu
+  #   ansible.builtin.apt:
+  #     update_cache: yes
+  #     name:
+  #       - "*"
+  #     state: latest
+  #   when: ansible_distribution in ["Ubuntu", "Debian"]
+
+  # - name: update cache on centos
+  #   ansible.builtin.yum:
+  #     update_cache: yes
+  #     name:
+  #       - "*"
+  #     state: latest
+  #   when: ansible_distribution in ["CentOS"] and ansible_distribution_major_version == "7"
+##
+  tasks:
+  - name: install updates (centos)
+    tags: always
+    ansible.builtin.yum:
+      update_only: yes
+      update_cache: yes
+      use_backend: yum3
+    when: ansible_distribution == "CentOS"
+
+  - name: install updates (ubuntu)
+    tags: always
+    ansible.builtin.apt:
+      upgrade: dist
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+# add user simone to all hosts
+- hosts: all
+  become: true
+  tasks:
+
+  - name: create user simone
+    tags: always
+    ansible.builtin.user:
+      name: simone
+      groups: root
+
+  - name: add ssh key for simone
+    tags: always
+    ansible.posix.authorized_key:
+      user: simone
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKsK8X/LTda8IbtrVKpb4C6ClO7VuTtcnXDuhfDtqqyi ansible"
+
+  - name: add sudoers file for simone
+    tags: always
+    ansible.builtin.copy:
+      src: sudoer_simone
+      dest: /etc/sudoers.d/simone
+      owner: root
+      group: root
+      mode: 0440
