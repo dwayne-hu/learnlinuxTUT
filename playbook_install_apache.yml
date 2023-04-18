@@ -52,11 +52,13 @@
   roles:
     - base
 
+###
   # - name: add ssh key for simone
   #   tags: always
   #   ansible.posix.authorized_key:
   #     user: simone
   #     key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKsK8X/LTda8IbtrVKpb4C6ClO7VuTtcnXDuhfDtqqyi ansible"
+###
 
 # Installing terraform on localhost
 - hosts: workstations
@@ -64,6 +66,7 @@
   roles:
     - workstations
 
+###
   # - name: install unzip
   #   ansible.builtin.package:
   #     name: unzip
@@ -76,6 +79,7 @@
   #     mode: 0755
   #     owner: root
   #     group: root
+###
 
 - hosts: web_servers
   become: true
@@ -157,6 +161,7 @@
   roles:
     - db_servers
 
+###
   # - name: install mariadb package (CentOS)
   #   tags: centos,mariadb,db
   #   ansible.builtin.dnf:
@@ -173,6 +178,7 @@
   #       - mariadb-server
   #     state: latest
   #   when: ansible_distribution == "Ubuntu"
+###
 
 - hosts: file_servers
   become: true 
@@ -185,10 +191,3 @@
   #     name: samba
   #     state: latest 
 
-  handlers:
-  - name: restart httpd (centos)
-    tags: apache,centos,httpd
-    ansible.builtin.service:
-      name: httpd
-      state: restarted
-    when: httpd.changed

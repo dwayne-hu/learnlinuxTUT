@@ -1,0 +1,5 @@
+- name: add ssh key for simone
+  tags: always
+  ansible.posix.authorized_key:
+    user: simone
+    key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKsK8X/LTda8IbtrVKpb4C6ClO7VuTtcnXDuhfDtqqyi ansible"

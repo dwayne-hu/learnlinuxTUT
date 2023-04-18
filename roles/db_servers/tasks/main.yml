@@ -1,0 +1,16 @@
+- name: install mariadb package (CentOS)
+  tags: centos,mariadb,db
+  ansible.builtin.dnf:
+    name:
+      - mariadb
+      - state: latest 
+      - use_backend: yum3
+  when: ansible_distribution == "CentOS"
+
+- name: install mariadb (Ubuntu)
+  tags: ubuntu,mariadb,db
+  ansible.builtin.apt:
+    name:
+      - mariadb-server
+    state: latest
+  when: ansible_distribution == "Ubuntu"
