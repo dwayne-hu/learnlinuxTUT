@@ -1,0 +1,189 @@
+---
+- hosts: all 
+  become: true
+
+# Pretasks updating the system
+  pre_tasks:
+  - name: update cache and all packages
+    tags: always
+    ansible.builtin.package:
+      name:
+        - "*"
+      state: latest
+      update_cache: yes
+
+## Replaced by 'package' module
+
+  # - name: update cache on ubuntu
+  #   ansible.builtin.apt:
+  #     update_cache: yes
+  #     name:
+  #       - "*"
+  #     state: latest
+  #   when: ansible_distribution in ["Ubuntu", "Debian"]
+
+  # - name: update cache on centos
+  #   ansible.builtin.yum:
+  #     update_cache: yes
+  #     name:
+  #       - "*"
+  #     state: latest
+  #   when: ansible_distribution in ["CentOS"] and ansible_distribution_major_version == "7"
+##
+  tasks:
+  - name: install updates (centos)
+    tags: always
+    ansible.builtin.yum:
+      update_cache: yes
+      use_backend: yum3
+    changed_when: false
+    when: ansible_distribution == "CentOS"
+
+  - name: install updates (ubuntu)
+    tags: always
+    ansible.builtin.apt:
+      update_cache: yes
+    changed_when: false
+    when: ansible_distribution == "Ubuntu"
+
+# add user simone to all hosts
+- hosts: all
+  become: true
+  tasks:
+
+  - name: add ssh key for simone
+    tags: always
+    ansible.posix.authorized_key:
+      user: simone
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKsK8X/LTda8IbtrVKpb4C6ClO7VuTtcnXDuhfDtqqyi ansible"
+
+# Installing terraform on localhost
+- hosts: workstations
+  become: true
+  tasks:
+
+  - name: install unzip
+    ansible.builtin.package:
+      name: unzip
+
+  - name: install terraform
+    ansible.builtin.unarchive:
+      src: https://releases.hashicorp.com/terraform/1.4.5/terraform_1.4.5_linux_amd64.zip
+      dest: /usr/local/bin
+      remote_src: yes
+      mode: 0755
+      owner: root
+      group: root
+
+- hosts: web_servers
+  become: true
+  tasks:
+
+
+  # - name: test
+  #   ansible.builtin.package:
+  #     name:
+  #       - "{{ apache_package }}"
+  #     state: latest
+
+# Replaced by 'package' module ##
+
+  - name: install apache2 on ubuntu
+    tags: apache2,apache,ubuntu 
+    ansible.builtin.apt:
+      name:
+        - apache2
+        - libapache2-mod-php
+      state: latest
+    when: ansible_distribution in ["Ubuntu", "Debian"]
+
+  - name: install apache2 on centos
+    tags: apache,centos,httpd
+    ansible.builtin.yum:
+      name:
+        - httpd
+        - php
+      state: latest
+      use_backend: yum3
+    when: ansible_distribution in ["CentOS"] and ansible_distribution_major_version == "7"
+
+  - name: start httpd (CentOS)
+    tags: centos,apache,httpd
+    ansible.builtin.service:
+      name: httpd
+      state: started
+      enabled: yes
+    when: ansible_distribution == "CentOS"
+
+  - name: start apache2 on centos
+    ansible.builtin.service:
+      name: httpd
+      state: started
+    when: ansible_distribution == "CentOS"
+
+  - name: configure firewall on centos
+    ansible.posix.firewalld:
+      permanent: true
+      immediate: true
+      port: 80/tcp
+      state: enabled
+    when: ansible_distribution in ["CentOS"]
+
+  - name: change email address for admin
+    tags: apache,centos,httpd
+    ansible.builtin.lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regex: '^ServerAdmin'
+      line: ServerAdmin dwaynibaby@baby.net
+    when: ansible_distribution == "CentOS"
+    register: httpd
+    notify: 
+      - restart httpd (centos)
+
+  - name: copy html file for site
+    tags: apache,apache2, httpd
+    copy:
+      src: default_site.html
+      dest: /var/www/html/index.html
+      owner: root
+      group: root
+      mode: 0644
+
+- hosts: db_servers 
+  become: true
+  tasks:
+
+  - name: install mariadb package (CentOS)
+    tags: centos,mariadb,db
+    ansible.builtin.dnf:
+      name:
+        - mariadb
+        - state: latest 
+        - use_backend: yum3
+    when: ansible_distribution == "CentOS"
+
+  - name: install mariadb (Ubuntu)
+    tags: ubuntu,mariadb,db
+    ansible.builtin.apt:
+      name:
+        - mariadb-server
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
+- hosts: file_servers
+  become: true 
+  tasks:
+
+  - name: install samba
+    tags: samba
+    ansible.builtin.package:
+      name: samba
+      state: latest 
+
+  handlers:
+  - name: restart httpd (centos)
+    tags: apache,centos,httpd
+    ansible.builtin.service:
+      name: httpd
+      state: restarted
+    when: httpd.changed
